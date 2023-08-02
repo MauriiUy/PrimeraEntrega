@@ -17,19 +17,21 @@ router.get('/carts', (req, res) => {
 
 router.post('/carts', (req, res) => {
   try {
-    const newProducts = req.body; 
+    const newProducts = req.body;
 
     const productsData = fs.readFileSync(productsFilePath, 'utf-8');
     const products = JSON.parse(productsData);
 
-    newProducts.forEach(newProduct => {
-      newProduct.id = generateProductId();
+    const lastProduct = products[products.length - 1];
+    const lastId = lastProduct ? lastProduct.id : 0;
+
+    newProducts.forEach((newProduct, index) => {
+      newProduct.id = lastId + index + 1;
       products.push(newProduct);
     });
 
     fs.writeFileSync(productsFilePath, JSON.stringify(products, null, 2));
 
-    
     const addedProductsInfo = newProducts.map(product => {
       return { id: product.id, stock: product.stock };
     });
@@ -71,7 +73,7 @@ router.delete('/:id', (req, res) => {
     const productsData = fs.readFileSync(productsFilePath, 'utf-8');
     const products = JSON.parse(productsData);
 
-    const productIndex = products.findIndex(product => product.id === id);
+    const productIndex = products.findIndex(product => product.id === parseInt(id));
 
     if (productIndex !== -1) {
       products.splice(productIndex, 1);
@@ -85,12 +87,5 @@ router.delete('/:id', (req, res) => {
   }
 });
 
-function generateProductId() {
-  const productsData = fs.readFileSync(productsFilePath, 'utf-8');
-  const products = JSON.parse(productsData);
-  const lastProduct = products[products.length - 1];
-  const lastId = lastProduct ? lastProduct.id : 0;
-  return lastId + 1;
-}
 
 module.exports = router;
