@@ -2,7 +2,7 @@ const { Router } = require('express');
 const router = Router();
 const fs = require('fs');
 const path = require('path');
-
+const products = require('./products/products.js');
 const productsFilePath = path.join(__dirname, 'products.json');
 
 router.get('/carts', (req, res) => {
@@ -14,33 +14,28 @@ router.get('/carts', (req, res) => {
     res.status(500).json({ error: 'Error al obtener la lista de productos' });
   }
 });
-
 router.post('/carts', (req, res) => {
   try {
-    const newProducts = req.body;
+    const productIdsToAdd = req.body.productIds; // Suponemos que el cuerpo de la solicitud tiene un campo "productIds" con los IDs a agregar
 
     const productsData = fs.readFileSync(productsFilePath, 'utf-8');
-    const products = JSON.parse(productsData);
+    const existingProducts = JSON.parse(productsData);
 
-    const lastProduct = products[products.length - 1];
-    const lastId = lastProduct ? lastProduct.id : 0;
+    const productsToAdd = products.filter(product => productIdsToAdd.includes(product.id));
 
-    newProducts.forEach((newProduct, index) => {
-      newProduct.id = lastId + index + 1;
-      products.push(newProduct);
-    });
+    const addedProductsInfo = productsToAdd.map(product => ({
+      id: product.id,
+      stock: product.stock
+    }));
 
-    fs.writeFileSync(productsFilePath, JSON.stringify(products, null, 2));
+    fs.writeFileSync(productsFilePath, JSON.stringify(addedProductsInfo, null, 2));
 
-    const addedProductsInfo = newProducts.map(product => {
-      return { id: product.id, stock: product.stock };
-    });
-
-    res.json({ message: 'Productos agregados', addedProducts: addedProductsInfo });
+    res.json({ message: 'Productos agregados al archivo products.json' });
   } catch (error) {
     res.status(500).json({ error: 'Error al agregar los productos' });
   }
 });
+
 
 router.put('/products/:id', (req, res) => {
   try {
